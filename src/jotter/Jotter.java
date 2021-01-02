@@ -4,7 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -36,7 +39,7 @@ public class Jotter {
     }
 
     public void design() {
-        frame.setSize(500, 300);
+        frame.setSize(400, 400);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // main menu
@@ -101,34 +104,35 @@ public class Jotter {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 JFileChooser saveFile = new JFileChooser();
-                saveFile.showSaveDialog(null);
+                int response = saveFile.showSaveDialog(null);
+
+                if (response == JFileChooser.APPROVE_OPTION) {
+                    // gets the specified file
+                    File filename = new File(saveFile.getSelectedFile().getAbsolutePath());
+                    try (FileWriter fileWriter = new FileWriter(filename);
+                        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+                        PrintWriter printWriter = new PrintWriter(bufferedWriter, true);) {
+
+                        printWriter.println(textArea.getText());  // writes content to the file
+
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                }
             }
         });
 
         exitItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                if (!textArea.getText().trim().isEmpty()) {
-                    var yesNO = JOptionPane.showConfirmDialog(null,
-                        "Save File??",
-                        "Save or Exit",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE);
-
-                    if (yesNO == 1) {
-                        System.exit(0);
-                    }
-                    System.out.println("contains " + yesNO);
-                } else {
-                    System.exit(0);
-                }
+                System.exit(0);
             }
         });
 
         aboutItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                JOptionPane.showMessageDialog(frame, "Version 0.0.1");
+                JOptionPane.showMessageDialog(frame, "Version 0.0.2");
             }
         });
 

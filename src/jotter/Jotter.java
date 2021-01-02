@@ -4,8 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import javax.swing.JFileChooser;
@@ -14,7 +16,9 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.UIManager;
 
 public class Jotter {
@@ -23,6 +27,9 @@ public class Jotter {
     JMenu fileMenu = new JMenu("File");
     JMenu helpMenu = new JMenu("Help");
     JTextArea textArea = new JTextArea();
+    JScrollPane scrollPane = new JScrollPane(textArea,
+        ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+        ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
     // menu items
     JMenuItem newItem = new JMenuItem("New");
@@ -41,6 +48,7 @@ public class Jotter {
     public void design() {
         frame.setSize(400, 400);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocation(200, 150);
 
         // main menu
         JMenuBar menuPanel = new JMenuBar();
@@ -57,14 +65,12 @@ public class Jotter {
         helpMenu.add(aboutItem);
 
         // setting the fonts
-//        fileMenu.setFont(new Font("Arial", Font.BOLD, 15));
-//        editMenu.setFont(new Font("Arial", Font.BOLD, 15));
-//        helpMenu.setFont(new Font("Arial", Font.BOLD, 15));
-        textArea.setFont(new Font("Arial", Font.PLAIN, 15));
+        textArea.setFont(new Font("Consolas", Font.PLAIN, 15));
+//        textArea.setWrapStyleWord(true); // wraps by word
 
         // adding components
         frame.getContentPane().add(BorderLayout.NORTH, menuPanel);
-        frame.getContentPane().add(BorderLayout.CENTER, textArea);
+        frame.getContentPane().add(BorderLayout.CENTER, scrollPane);
         frame.setVisible(true);
     }
 
@@ -80,10 +86,9 @@ public class Jotter {
         newItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                // create new file
-                Jotter newJotter = new Jotter();
-                newJotter.design();
-                newJotter.buttonFunctions();
+                // TODO: sent new file to tabbed menu on the text editor
+                // consideration: show warning before erasing text area
+                textArea.setText("");
             }
         });
 
@@ -94,7 +99,19 @@ public class Jotter {
                 int response = openNewFile.showOpenDialog(null);
 
                 if (response == JFileChooser.APPROVE_OPTION) {
+                    // gets the specified file
                     File file = new File(openNewFile.getSelectedFile().getAbsolutePath());
+                    try (FileReader fileReader = new FileReader(file);
+                        BufferedReader bufferedReader = new BufferedReader(fileReader);) {
+
+                        String currentLine;
+                        String content = "";
+                        while ((currentLine = bufferedReader.readLine()) != null) {
+                            content += currentLine + "\n";
+                        }
+                        textArea.setText(content);
+                    } catch (Exception e) {
+                    }
                     System.out.println("Path: " + file);
                 }
             }

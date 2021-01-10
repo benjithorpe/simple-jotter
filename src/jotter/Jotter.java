@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -17,6 +18,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.ScrollPaneConstants;
@@ -46,6 +48,8 @@ public class Jotter {
     JMenuItem lineWrapOn = new JMenuItem("ON");
     JMenuItem lineWrapOff = new JMenuItem("OFF");
 
+    JPanel lineNumbers = new JPanel();
+
     public static void main(String[] args) {
         setLooks();
         Jotter jotter = new Jotter();
@@ -58,6 +62,13 @@ public class Jotter {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(false);
         frame.setLocationRelativeTo(null);
+
+        // testing side bar feature
+        JButton but = new JButton("test");
+
+        lineNumbers.add(but);
+
+        // end of test
 
         // main menu
         JMenuBar menuPanel = new JMenuBar();
@@ -85,6 +96,7 @@ public class Jotter {
         // adding components
         frame.getContentPane().add(BorderLayout.NORTH, menuPanel);
         frame.getContentPane().add(BorderLayout.CENTER, scrollPane);
+        frame.getContentPane().add(BorderLayout.WEST, lineNumbers);
         frame.setVisible(true);
     }
 
@@ -95,9 +107,8 @@ public class Jotter {
         }
     }
 
-    JFileChooser fileChooser = new JFileChooser();
-
     void buttonFunctions() {
+        JFileChooser fileChooser = new JFileChooser();
 
         newItem.addActionListener(new ActionListener() {
             @Override
@@ -109,6 +120,7 @@ public class Jotter {
         saveItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
+
                 int response = fileChooser.showSaveDialog(frame);
                 if (response == JFileChooser.APPROVE_OPTION) {
                     File file = new File(fileChooser.getSelectedFile().getAbsolutePath());
@@ -127,11 +139,16 @@ public class Jotter {
         openItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
+
                 int response = fileChooser.showOpenDialog(frame);
                 if (response == JFileChooser.APPROVE_OPTION) {
+
                     textArea.setText("");  // clears the text area before writing
                     File file = new File(fileChooser.getSelectedFile().getAbsolutePath());
-                    try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+
+                    try (FileReader fileReader = new FileReader(file);
+                            BufferedReader bufferedReader = new BufferedReader(fileReader);) {
+
                         String currentLine;
                         while ((currentLine = bufferedReader.readLine()) != null) {
                             textArea.append(currentLine + "\n");
@@ -153,15 +170,14 @@ public class Jotter {
         aboutItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                JOptionPane.showMessageDialog(frame, "Version 0.0.5");
+                JOptionPane.showMessageDialog(frame, "Version 0.0.7");
             }
         });
 
         fontColor.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                JColorChooser fontColorChooser = new JColorChooser();
-                Color fontColor = fontColorChooser.showDialog(frame, "Choose Text Color", Color.BLACK);
+                Color fontColor = JColorChooser.showDialog(frame, "Choose Text Color", Color.BLACK);
                 textArea.setForeground(fontColor);
             }
         });
@@ -169,8 +185,7 @@ public class Jotter {
         bgColor.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                JColorChooser bgColorChooser = new JColorChooser();
-                Color fontColor = bgColorChooser.showDialog(frame, "Choose Background Color", Color.WHITE);
+                Color fontColor = JColorChooser.showDialog(frame, "Choose Background Color", Color.WHITE);
                 textArea.setBackground(fontColor);
             }
         });

@@ -1,209 +1,144 @@
 package jotter;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.PrintWriter;
-import javax.swing.JButton;
-import javax.swing.JColorChooser;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.UIManager;
+import java.io.IOException;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.scene.Scene;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.TextArea;
+import javafx.scene.layout.BorderPane;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
-public class Jotter {
+public class Jotter extends Application {
 
-    JFrame frame = new JFrame("Simple Jotter");
-    JMenu fileMenu = new JMenu("File");
-    JMenu editMenu = new JMenu("Edit");
-    JMenu helpMenu = new JMenu("Help");
-    JTextArea textArea = new JTextArea();
-    JScrollPane scrollPane = new JScrollPane(textArea,
-            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    // menu bar items
+    Menu fileMenu = new Menu("File");
+    Menu editMenu = new Menu("Edit");
+    Menu helpMenu = new Menu("Help");
+    FileChooser fileChooser = new FileChooser();
 
-    // menu items
-    JMenuItem newItem = new JMenuItem("New");
-    JMenuItem openItem = new JMenuItem("Open");
-    JMenuItem saveItem = new JMenuItem("Save");
-    JMenuItem exitItem = new JMenuItem("Exit");
-    JMenuItem aboutItem = new JMenuItem("About");
-    JMenu color = new JMenu("Color");
-    JMenuItem bgColor = new JMenuItem("Background Color");
-    JMenuItem fontColor = new JMenuItem("Font Color");
-    JMenu lineWrap = new JMenu("Line Wrap");
-    JMenuItem lineWrapOn = new JMenuItem("ON");
-    JMenuItem lineWrapOff = new JMenuItem("OFF");
+    // sub file menu items
+    MenuItem newItem = new MenuItem("New");
+    MenuItem openItem = new MenuItem("Open");
+    MenuItem saveItem = new MenuItem("Save");
+    MenuItem exitItem = new MenuItem("Exit");
 
-    JPanel lineNumbers = new JPanel();
+    // sub edit menu items
+    Menu color = new Menu("Color");
+    // color menu items
+    MenuItem bgColor = new MenuItem("Background Color");
+    MenuItem fontColor = new MenuItem("Font Color");
+    MenuItem replace = new MenuItem("Replace");
+    Menu lineWrap = new Menu("Line Wrap");
+    // line wrap menu items
+    MenuItem lineWrapOn = new MenuItem("ON");
+    MenuItem lineWrapOff = new MenuItem("OFF");
+
+    //sub help menu item
+    MenuItem aboutItem = new MenuItem("About");
 
     public static void main(String[] args) {
-        setLooks();
-        Jotter jotter = new Jotter();
-        jotter.design();
-        jotter.buttonFunctions();
+        launch(args);
     }
 
-    public void design() {
-        frame.setSize(400, 400);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setResizable(false);
-        frame.setLocationRelativeTo(null);
+    // stores the name of the file that is currently open
+    String currentOpenFile = null;
 
-        // testing side bar feature
-        JButton but = new JButton("test");
+    @Override
+    public void start(Stage stage) throws Exception {
+        stage.setTitle("Simple Jotter");
+        design();
+        TextArea textArea = new TextArea();
 
-        lineNumbers.add(but);
+        MenuBar menuBar = new MenuBar();
+        menuBar.getMenus().addAll(fileMenu, editMenu, helpMenu);
 
-        // end of test
+        BorderPane borderPane = new BorderPane();
+        borderPane.setTop(menuBar);
+        borderPane.setCenter(textArea);
 
-        // main menu
-        JMenuBar menuPanel = new JMenuBar();
-        menuPanel.add(fileMenu);
-        menuPanel.add(editMenu);
-        menuPanel.add(helpMenu);
+        Scene scene = new Scene(borderPane, 400, 300);
 
-        // file menu items
-        fileMenu.add(newItem);
-        fileMenu.add(openItem);
-        fileMenu.add(saveItem);
-        fileMenu.add(exitItem);
+        stage.setScene(scene);
+        stage.show();
 
-        // edit menu items
-        color.add(fontColor);
-        color.add(bgColor);
-        editMenu.add(color);
-        lineWrap.add(lineWrapOn);
-        lineWrap.add(lineWrapOff);
-        editMenu.add(lineWrap);
-
-        // help menu items
-        helpMenu.add(aboutItem);
-
-        // adding components
-        frame.getContentPane().add(BorderLayout.NORTH, menuPanel);
-        frame.getContentPane().add(BorderLayout.CENTER, scrollPane);
-        frame.getContentPane().add(BorderLayout.WEST, lineNumbers);
-        frame.setVisible(true);
-    }
-
-    static void setLooks() {
-        try {
-            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-        } catch (Exception e) {
-        }
-    }
-
-    void buttonFunctions() {
-        JFileChooser fileChooser = new JFileChooser();
-
-        newItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                textArea.setText("");
-            }
+        // actions for the buttons
+        newItem.setOnAction((ActionEvent ae) -> {
+            stage.setTitle("Jotter");
+            textArea.clear();
+            currentOpenFile = null;
         });
 
-        saveItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
+        saveItem.setOnAction((ActionEvent ae) -> {
 
-                int response = fileChooser.showSaveDialog(frame);
-                if (response == JFileChooser.APPROVE_OPTION) {
-                    File file = new File(fileChooser.getSelectedFile().getAbsolutePath());
+            if (currentOpenFile != null) {
+                try (FileWriter fileWriter = new FileWriter(new File(currentOpenFile));
+                        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);) {
 
-                    try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
-                            PrintWriter printWriter = new PrintWriter(bufferedWriter, true);) {
+                    bufferedWriter.write(textArea.getText());
 
-                        printWriter.println(textArea.getText());  // writes content to the file
-                    } catch (Exception e) {
-                        JOptionPane.showMessageDialog(frame, e.getMessage());
+                } catch (IOException e) {
+                    // do nothing
+                }
+            } else {
+                File selectedFile = fileChooser.showSaveDialog(stage);
+                if (selectedFile != null) {
+                    try (FileWriter fileWriter = new FileWriter(selectedFile.getAbsolutePath());
+                            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);) {
+
+                        bufferedWriter.write(textArea.getText());
+                        currentOpenFile = selectedFile.getAbsolutePath();
+                        stage.setTitle(selectedFile.getName() + " - Jotter");
+                    } catch (IOException e) {
+                        // do nothing
                     }
                 }
             }
         });
 
-        openItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
+        openItem.setOnAction((ActionEvent ae) -> {
+            File selectedFile = fileChooser.showOpenDialog(null);
 
-                int response = fileChooser.showOpenDialog(frame);
-                if (response == JFileChooser.APPROVE_OPTION) {
+            if (selectedFile != null) {
+                textArea.clear();
 
-                    textArea.setText("");  // clears the text area before writing
-                    File file = new File(fileChooser.getSelectedFile().getAbsolutePath());
+                try (FileReader fileReader = new FileReader(selectedFile);
+                        BufferedReader bufferedReader = new BufferedReader(fileReader);) {
 
-                    try (FileReader fileReader = new FileReader(file);
-                            BufferedReader bufferedReader = new BufferedReader(fileReader);) {
-
-                        String currentLine;
-                        while ((currentLine = bufferedReader.readLine()) != null) {
-                            textArea.append(currentLine + "\n");
-                        }
-                    } catch (Exception e) {
-                        JOptionPane.showMessageDialog(frame, e.getMessage());
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        textArea.appendText(line + "\n");
                     }
+
+                    currentOpenFile = selectedFile.getAbsolutePath();
+                    stage.setTitle(selectedFile.getName() + " - Jotter");
+                } catch (IOException e) {
+                    // do nothing
                 }
             }
         });
 
-        exitItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                System.exit(0);
-            }
+        exitItem.setOnAction((ActionEvent ae) -> {
+            Platform.exit();
         });
 
-        aboutItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                JOptionPane.showMessageDialog(frame, "Version 0.0.7");
-            }
-        });
+    }
 
-        fontColor.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                Color fontColor = JColorChooser.showDialog(frame, "Choose Text Color", Color.BLACK);
-                textArea.setForeground(fontColor);
-            }
-        });
+    void design() {
+        fileMenu.getItems().addAll(newItem, openItem, saveItem, exitItem);
+        editMenu.getItems().addAll(color, replace, lineWrap);
+        helpMenu.getItems().add(aboutItem);
 
-        bgColor.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                Color fontColor = JColorChooser.showDialog(frame, "Choose Background Color", Color.WHITE);
-                textArea.setBackground(fontColor);
-            }
-        });
-
-        lineWrapOn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                textArea.setLineWrap(true);
-                textArea.setWrapStyleWord(true);
-            }
-        });
-
-        lineWrapOff.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                textArea.setLineWrap(false);
-                textArea.setWrapStyleWord(false);
-            }
-        });
+        color.getItems().addAll(fontColor, bgColor);
+        lineWrap.getItems().addAll(lineWrapOn, lineWrapOff);
     }
 }
